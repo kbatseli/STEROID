@@ -1,11 +1,21 @@
-% create a random 8-way symmetric tensor
-A=randsymten(8,3);
+% create a random 7-way symmetric tensor
+A=randsymten(7,3);
 
 % check whether it is symmetric
 norm(symcheck(A))
 
-% compute its 5-way approximation
-[V5,D5,lambdas5,e5,X5,tail5]=steroid(A,5);
+% compute its STEROID with the original method
+tic,
+[V1,d1,lambdas1,e1,tail1]=steroid(A);
+toc
 
-% compute its 8-way approximation
-[V8,D8,lambdas8,e8,X8,tail8]=steroid(A);
+% compute its STEROID with symmetry exploitation
+tic,
+[V2,d2,lambdas2,e2,tail2]=steroid(A,'wsym');
+toc
+
+% compute its STEROID with X^T*X
+tic,
+[V3,d3,lambdas3,e3,tail3]=steroid(A,'wtw');
+toc
+
