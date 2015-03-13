@@ -1,5 +1,5 @@
-function [V,d,lambdas,e,tail]=steroid(A,varargin)
-% [V,d,lambdas,e,tail]=steroid(A,method) or [V,tail]=steroid(A,method)
+function [V,l,lambdas,e,tail]=steroid(A,varargin)
+% [V,l,lambdas,e,tail]=steroid(A,method) or [V,tail]=steroid(A,method)
 % --------------------------------------------------------------------
 % Symmetric Tensor Eigen Rank-One Iterative Decomposition. Decomposes a
 % symmetric tensor into a real linear combination of real rank-1 symmetric 
@@ -9,7 +9,7 @@ function [V,d,lambdas,e,tail]=steroid(A,varargin)
 % V         =   matrix, each column corresponds with a vector that
 %               determines 1 rank-1 symmetric tensor,
 %
-% d         =   vector, contains the weights of each of the terms defined
+% l         =   vector, contains the weights of each of the terms defined
 %               by the columns of V in the decomposition,
 %
 % lambdas   =   vector, contains the weights in the STEROID,
@@ -75,16 +75,25 @@ Vt=cell(1,totaleigs);
 Dt=cell(1,totaleigs);
 L=cell(1,totaleigs);
 
+eigtime=[];
+embedtime=[];
+
 if mod(d,2)==1
     % odd-order, need to embed
+    tic
     A=embed(A);
+    test=toc;
+    embedtime=[embedtime test];
     d=(d+1)/2;
 else
     d=d/2;
 end
 
+tic
 % first eig
 [V1,D1]=eig(reshape(A,[n^d n^d]));
+test=toc;
+eigtime=[eigtime test];
 Dt{1}=diag(D1);
 Vt{1}=V1;
 % [Dt{1} I]=sort(abs(diag(D1)),'descend');
@@ -112,20 +121,27 @@ for i=1:length(r)-1           % outer loop over the levels
         if ~isempty(Dt{whichvcounter}) && abs(Dt{whichvcounter}(col)) > tol
             if mod(d,2)==1
                 % odd-order, need to embed
+                tic
                 tempV=embed(reshape(Vt{whichvcounter}(:,col),n*ones(1,d)));
-                dtemp=(d+1)/2;
+                test=toc;
+                embedtime=[embedtime test];                dtemp=(d+1)/2;
             else
                 tempV=reshape(Vt{whichvcounter}(:,col),n*ones(1,d));
                 dtemp=d/2;
             end
-            
+            tic
             [V1,D1]=eig(reshape(tempV,[n^dtemp n^dtemp]));
+            test=toc;
+            eigtime=[eigtime test];
+
             Vt{counter}=V1;
             Dt{counter}=diag(D1);
             L{counter}=diag(D1).^(2^(i));
             if i==length(r)-1
-                V(:,(vcolcounter-1)*n+1:vcolcounter*n)=V1;
-                vcolcounter=vcolcounter+1;
+                I=find(abs(Dt{counter}) > tol);
+                % only need eigenvectors corresponding with nonzero eigenvalues
+                V(:,vcolcounter:vcolcounter+length(I)-1)=V1(:,I);
+                vcolcounter=vcolcounter+length(I);
             end
         else
             L{counter}=zeros(n^dtemp,1);
@@ -161,7 +177,7 @@ for i=1:length(r),
     lambdas=lambdas.*Llevel{i};
 end
 lambdas(lambdas==0)=[];
-
+% time(1)=toc;  
 clear A D1 V1 Dt Vt L Llevel col colcounter
    
 if isempty(varargin)
@@ -179,20 +195,19 @@ if nargout==2
              for i=1:size(W,2)
                  W(:,i)=mkron(V(:,i),doriginal);
              end
-             d=reshape(a-W*lambdas,n*ones(1,doriginal));  % compute symmetric tail
+             l=reshape(a-W*lambdas,n*ones(1,doriginal));  % compute symmetric tail
         case {'wtw','wsym'}
             % compute symmetric tail
             head=zeros(n^doriginal,1);
             for i=1:length(lambdas)
                 head=head+lambdas(i)*mkron(V(:,i),doriginal);
             end
-            d=reshape(a-head,n*ones(1,doriginal));
+            l=reshape(a-head,n*ones(1,doriginal));
     end
     return
 end
-    
+  
             
-    
 %% solve the linear system W*d=vec(A)
 switch lower(method)
     case {'bigw'}
@@ -201,9 +216,12 @@ switch lower(method)
         for i=1:size(W,2)
             W(:,i)=mkron(V(:,i),doriginal);
         end
-        d=W\a;
-        I=find(d);
-        e=norm(a-W(:,I)*d(I));                          % compute residual
+        tic
+        l=W\a;
+        lstime=toc;
+%         time(2)=toc;
+        I=find(l);
+        e=norm(a-W(:,I)*l(I));                          % compute residual
         tail=reshape(a-W*lambdas,n*ones(1,doriginal));  % compute symmetric tail
     case {'wtw',}
         % W^T*W
@@ -213,7 +231,10 @@ switch lower(method)
         for i=1:size(V,2)
             b(i,1)=mkron(V(:,i),doriginal)'*a;
         end
-        d=WtW\b;
+        tic
+        l=WtW\b;
+        lstime=toc;
+%         time(2)=toc;
 %         % solve linear system with SVD
 %         [Uw Sw Vw]=svd(WtW);
 %         s=diag(Sw);
@@ -225,9 +246,9 @@ switch lower(method)
         
         % compute residual
         ahat=zeros(n^doriginal,1);
-        I=find(d);
+        I=find(l);
         for i=1:length(I)
-            ahat=ahat+d(I(i))*mkron(V(:,I(i)),doriginal);
+            ahat=ahat+l(I(i))*mkron(V(:,I(i)),doriginal);
         end        
         e=norm(a-ahat);
         
@@ -246,9 +267,12 @@ switch lower(method)
         for i=1:size(Wsym,1)
            Wsym(i,:)=prod(V.^(mons(i,:)'*ones(1,size(V,2))),1);
         end
-        d=Wsym\b;
-        I=find(d);
-        e=norm(b-Wsym(:,I)*d(I));                          % compute residual
+        tic
+        l=Wsym\b;
+        lstime=toc;
+%         time(2)=toc;
+        I=find(l);
+        e=norm(b-Wsym(:,I)*l(I));                          % compute residual
         
         % compute symmetric tail
         head=zeros(n^doriginal,1);
@@ -257,6 +281,8 @@ switch lower(method)
         end   
         tail=reshape(a-head,n*ones(1,doriginal));
 end
-        
+% disp(['error: ' num2str(e) ', number of eigs: ' num2str(length(eigtime)) ', number of embeddings: ' num2str(length(embedtime)) ', total eigtime: ' num2str(sum(eigtime)) ', total embedtime: ' num2str(sum(embedtime)) ',V time: ' num2str(sum(eigtime)+sum(embedtime)) ', LS time: ' num2str(lstime) ]);
+disp(['error: ' num2str(e) ', LS time: ' num2str(lstime) ]);
+% disp(['error: ' num2str(e) ', V vectors: ' num2str(time(1)) ', LS: ' num2str(time(2)) ', total time: ' num2str(sum(time))])
 
 end
