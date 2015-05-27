@@ -12,7 +12,7 @@ function [V,l,lambdas,e,tail]=steroid(A,varargin)
 % l         =   vector, contains the weights of each of the terms defined
 %               by the columns of V in the decomposition,
 %
-% lambdas   =   vector, contains the weights in the STEROID,
+% lambdas   =   vector, contains the weights in each of the STEROIDs,
 %
 % e         =   scalar, residual that is not described by the span of V,
 %
@@ -156,7 +156,7 @@ for i=1:length(r)-1           % outer loop over the levels
 end
 
 % remove zero V vectors
- V(:,sum(V,1)==0)=[];
+ V(:,sum(abs(V),1)==0)=[];
 
 % compute the lambdas
 Llevel=cell(1,length(r));   % cat each level singular values into 1 vector

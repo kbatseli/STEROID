@@ -19,7 +19,7 @@ function B=embed(A)
 
 n=size(A);
 d=length(n);
-n=n(1);
+
 
 if mod(d,2) == 0
     disp('Given tensor A is already of even order.');
@@ -27,12 +27,41 @@ if mod(d,2) == 0
     return
 end
 
-[lindex indices]=exp2ind(getMonBase(d,n));
+% first determine nonzero entries
+I=find(A(:));
+% convert linear indices to d-way indices
+tempindices=zeros(size(I,1),d);
+for i=1:size(I,1)
+    string='[';
+    for j=1:d-1
+        string=[string 'tempindices(' num2str(i) ',' num2str(j) '),'];        
+    end
+    string=[string 'tempindices(' num2str(i) ',' num2str(d) ')]=ind2sub(n,I(' num2str(i) '));'];
+    eval(string);
+end
+% now remove duplicate indices
+indices=[];
+lindex=[];
+while ~isempty(tempindices)
+    % store the index of a distinct entry
+    indices=[indices;tempindices(1,:)];
+    % keep the distinct entry value
+    string=['A(' num2str(tempindices(1,1))];
+    for i=2:d
+        string=[string ',tempindices(1,' num2str(i) ')'];
+    end
+    string=[string ');'];   
+    lindex=[lindex;eval(string)];
+        
+    temp=perms(tempindices(1,:));
+    temp=intersect(temp,temp,'rows');
+    tempindices=setdiff(tempindices,temp,'rows');
+end
 % extend indices to even order
 indices=[indices ones(size(indices,1),1)];
+n=n(1);
+B=zeros(n^(d+1),1);    
 
-B=zeros(prod(n*ones(1,d+1)),1);
-   
 for i=1:size(indices,1)
     temp=perms(indices(i,:));
     temp=intersect(temp,temp,'rows');
@@ -43,7 +72,7 @@ for i=1:size(indices,1)
         end
         string=[string ');'];
         eval(string);
-        B(index)=A(lindex(i));
+        B(index)=lindex(i);
     end
 end
 
