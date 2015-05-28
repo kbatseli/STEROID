@@ -12,7 +12,7 @@ function [V,l,lambdas,e,tail]=steroid(A,varargin)
 % l         =   vector, contains the weights of each of the terms defined
 %               by the columns of V in the decomposition,
 %
-% lambdas   =   vector, contains the weights in each of the STEROIDs,
+% lambdas   =   vector, contains the weights in the STEROID,
 %
 % e         =   scalar, residual that is not described by the span of V,
 %
@@ -105,12 +105,15 @@ whichvcounter=1;    % this counter keeps track during the iterations of which V 
 if length(r)==1
     V=V1;   
 else
-    V=zeros(n,prod([sum(abs(Dt{1})>length(Dt{1})*eps(max(Dt{1}))) r(2:end)]));
+    V = spalloc(n,prod(r),n*prod(r)); 
+%     V=zeros(n,prod([sum(abs(Dt{1})>length(Dt{1})*eps(max(Dt{1}))) r(2:end)]));
     vcolcounter=1;
 end
+tol=n^d*eps(max(abs(Dt{whichvcounter})));
+lambdas=kron(L{1}, ones(nleaf/length(L{1}),1));
 
 for i=1:length(r)-1           % outer loop over the levels
-	tol=n^d*eps(max(abs(Dt{whichvcounter})));
+    Llevel=[];
 % 	tol=n^(d/(2^i))*eps(max(abs(Dt{whichvcounter})));    
     for j=1:prod(r(1:i))      % inner loop over the number of eigs for this level 
         if rem(j,r(i)) == 0
@@ -137,14 +140,17 @@ for i=1:length(r)-1           % outer loop over the levels
             Vt{counter}=V1;
             Dt{counter}=diag(D1);
             L{counter}=diag(D1).^(2^(i));
-            if i==length(r)-1
-                I=find(abs(Dt{counter}) > tol);
-                % only need eigenvectors corresponding with nonzero eigenvalues
-                V(:,vcolcounter:vcolcounter+length(I)-1)=V1(:,I);
-                vcolcounter=vcolcounter+length(I);
+            Llevel=[Llevel;L{counter}];
+            if i==length(r)-1                
+                V(:,vcolcounter:vcolcounter+size(V1,2)-1)=V1;
+                vcolcounter=vcolcounter+size(V1,2);
             end
         else
             L{counter}=zeros(n^dtemp,1);
+            Llevel=[Llevel;L{counter}];
+            if i==length(r)-1                
+                vcolcounter=vcolcounter+size(V1,2);
+            end            
         end
         counter=counter+1;
         if rem(j,length(Dt{whichvcounter}))==0
@@ -153,33 +159,16 @@ for i=1:length(r)-1           % outer loop over the levels
         end
     end
     d=dtemp;
+    Llevel=kron(Llevel, ones(nleaf/length(Llevel),1));
+    lambdas=lambdas.*Llevel;
 end
 
-% remove zero V vectors
- V(:,sum(abs(V),1)==0)=[];
+clear A D1 V1 Dt Vt L Llevel col colcounter whichvcounter vcolcounter
 
-% compute the lambdas
-Llevel=cell(1,length(r));   % cat each level singular values into 1 vector
-counter=1;
-for i=1:length(r),
-    for j=1:eigsperlevel(i),
-        Llevel{i}=[Llevel{i}; L{counter}];
-        counter=counter+1;
-    end
-end
+% remove zero lambdas and corresponding vectors
+V=full(V(:,abs(lambdas)>tol));
+lambdas=lambdas(abs(lambdas)>tol);
 
-for i=1:length(r),             % make all singular value vectors the same size (number of leaves)
-    Llevel{i}=kron(Llevel{i}, ones(nleaf/length(Llevel{i}),1));
-end
-
-lambdas=ones(nleaf,1);         % output singular values at each leaf
-for i=1:length(r),
-    lambdas=lambdas.*Llevel{i};
-end
-lambdas(lambdas==0)=[];
-% time(1)=toc;  
-clear A D1 V1 Dt Vt L Llevel col colcounter
-   
 if isempty(varargin)
     method='bigW';
 else
@@ -197,12 +186,17 @@ if nargout==2
              end
              l=reshape(a-W*lambdas,n*ones(1,doriginal));  % compute symmetric tail
         case {'wtw','wsym'}
-            % compute symmetric tail
-            head=zeros(n^doriginal,1);
-            for i=1:length(lambdas)
-                head=head+lambdas(i)*mkron(V(:,i),doriginal);
+            if length(lambdas) ~=size(V,2)
+                disp('Warning: length lambdas not equal to number of V vectors');
+                l=lambdas;
+            else
+                % compute symmetric tail
+                head=zeros(n^doriginal,1);
+                for i=1:length(lambdas)
+                    head=head+lambdas(i)*mkron(V(:,i),doriginal);
+                end
+                l=reshape(a-head,n*ones(1,doriginal));
             end
-            l=reshape(a-head,n*ones(1,doriginal));
     end
     return
 end
@@ -282,7 +276,7 @@ switch lower(method)
         tail=reshape(a-head,n*ones(1,doriginal));
 end
 % disp(['error: ' num2str(e) ', number of eigs: ' num2str(length(eigtime)) ', number of embeddings: ' num2str(length(embedtime)) ', total eigtime: ' num2str(sum(eigtime)) ', total embedtime: ' num2str(sum(embedtime)) ',V time: ' num2str(sum(eigtime)+sum(embedtime)) ', LS time: ' num2str(lstime) ]);
-disp(['error: ' num2str(e) ', LS time: ' num2str(lstime) ]);
+% disp(['error: ' num2str(e) ', LS time: ' num2str(lstime) ]);
 % disp(['error: ' num2str(e) ', V vectors: ' num2str(time(1)) ', LS: ' num2str(time(2)) ', total time: ' num2str(sum(time))])
 
 end
