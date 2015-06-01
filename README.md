@@ -1,14 +1,18 @@
 Symmetric Tensor Eigen-Rank-One Iterative Decomposition (STEROID)
 -----------------------------------------------------------------
 
-The Symmetric Tensor Eigen-Rank-One Iterative Decomposition (STEROID) decomposes an arbitrary symmetric tensor A into a real linear combination of unit-norm symmetric rank-1 terms.
+The Symmetric Tensor Eigen-Rank-One Iterative Decomposition (STEROID) decomposes an arbitrary symmetric tensor A into a real linear combination of unit-norm symmetric rank-1 terms. Sparse symmetric tensors are also supported.
 
 1. Functions
 ------------
 
 * [V,d,lambdas,e,tail]=steroid(A) or [V,d,lambdas,e,tail]=steroid(A,method)
 
-Use this function to compute the STEROID of a symmetric tensor A.
+Use this function to compute the STEROID of a symmetric tensor A. The least-squares problem W*d=vec(A) is solved according to the given 'method' input argument.
+
+* [V,d,lambdas,e,tail]=steroids(polyA,R)
+
+Use this function to compute the STEROID of a sparse symmetric tensor A, where A is represented as a homogeneous polynomial. This method can be highly advantageous in terms of required memory and time complexity for very sparse tensors of high dimension. Instead of the full eigenvalue decomposition, only R terms corresponding with the highest eigenvalues are computed. The least-squares problem W*d=vec(A) is always solved using the W^T*W method.
 
 * A=randsymten(d,n)
 
