@@ -1,5 +1,5 @@
-function [V,l,lambdas,e,tail]=steroid(polyA,R)
-% [V,l,lambdas,e,tail]=steroids(polyA,R) or [V,tail]=steroids(polyA,R)
+function [V,l,e,varargout]=steroids(polyA,R)
+% [V,l,e,tail,lambdas]=steroids(polyA,R) or [V,tail]=steroids(polyA,R)
 % --------------------------------------------------------------------
 % Symmetric Tensor Eigen Rank-One Iterative Decomposition. Decomposes a
 % symmetric tensor into a real linear combination of real rank-1 symmetric 
@@ -12,12 +12,12 @@ function [V,l,lambdas,e,tail]=steroid(polyA,R)
 % l         =   vector, contains the weights of each of the terms defined
 %               by the columns of V in the decomposition,
 %
-% lambdas   =   vector, contains the weights in the STEROID,
-%
 % e         =   scalar, residual that is not described by the span of V,
 %
 % tail      =   tensor, symmetric tensor built up from the cross-product
 %               contributions in the STEROID,
+%
+% lambdas   =   vector, contains the weights in the STEROID,
 %
 % polyA     =   cell, polysys cell for 1 homogeneous polynomial,
 %
@@ -171,17 +171,11 @@ lambdas=lambdas(abs(lambdas)>tol);
 if nargout==2
     % only V vectors and tail are required
     % need to compute the tail
-    if length(lambdas) ~=size(V,2)
-        disp('Warning: length lambdas not equal to number of V vectors');
-        l=lambdas;
-    else
-        % compute symmetric tail
-        head=zeros(n^doriginal,1);
-        for i=1:length(lambdas)
-            head=head+lambdas(i)*mkron(V(:,i),doriginal);
-        end
-        l=reshape(a-head,n*ones(1,doriginal));
+    head=zeros(n^doriginal,1);
+    for i=1:length(lambdas)
+        head=head+lambdas(i)*mkron(V(:,i),doriginal);
     end
+    l=reshape(a-head,n*ones(1,doriginal));
     return
 end
   
@@ -198,19 +192,22 @@ tic
 l=pinv(WtW)*b;
 lstime=toc;
 
-% compute symmetric tail
-head=zeros(n^doriginal,1);
-for i=1:length(lambdas)
-    head=head+lambdas(i)*mkron(V(:,i),doriginal);
+if nargout > 3
+    % compute symmetric tail
+    head=zeros(n^doriginal,1);
+    for i=1:length(lambdas)
+        head=head+lambdas(i)*mkron(V(:,i),doriginal);
+    end
+    varargout{1}=reshape(a-head,n*ones(1,doriginal));
+    varargout{2}=lambdas;
+else
+    varargout=cell(1,1);
 end
-tail=reshape(a-head,n*ones(1,doriginal));
-
 % compute residual
 ahat=zeros(n^doriginal,1);
 % remove zero lambdas and corresponding vectors
 V=full(V(:,abs(l)>tol));
 l=l(abs(l)>tol);
-
 for i=1:length(l)
     ahat=ahat+l(i)*mkron(V(:,i),doriginal);
 end        
