@@ -1,5 +1,5 @@
 function [lambda,V,err,itr]=pqrst(A,varargin)
-%  [lambda,V,err,itr]=pqrst(A,tol,kmax,shifting,R)
+% [lambda,V,err,itr]=pqrst(A,tol,kmax,shifting,R)
 % ------------------------------------------------
 % Tries to compute Z-eigenpairs of the symmetric tensor A using the QR
 % algorithm on matrix slices of permuted versions of A.
@@ -9,15 +9,25 @@ function [lambda,V,err,itr]=pqrst(A,varargin)
 %
 % V         =   matrix, each column corresponds with a possible Z-eigenvector,
 %
-% err       =   vector, contains ,
+% err       =   vector, each entry i contains ||A*V(:,i)^d-lambda(i)*V(:,i)||_2
 %
-% e         =   scalar, residual that is not described by the span of V,
-%
-% tail      =   tensor, symmetric tensor built up from the cross-product
-%               contributions in the STEROID,
+% itr       =   vector, each entry i contains how many iterations were
+%				done to obtain to obtain the possible Z-eigenpair (lambda(i),V(:,i)), 
 %
 % A         =   tensor, symmetric d-way tensor,
 %
+% tol		=	scalar, optional tolerance, break off the iterations when
+% 				||A_k*e_i^(d-1)-e_i||_2 < tol, default value = 1e-16,
+%
+% kmax		=	scalar, optional maximumal number of iterations to do, 
+%				default value = 100,
+%
+% shifting	=	scalar, optional shift for the eigenvalue problem,
+%				default value = 1,
+% 				
+% R 		=	scalar, number of terms to compute using eigs,
+%				only to be used when A is given in a sparse homogeneous
+%				polynomial format.
 %
 % Reference
 % ---------
@@ -29,7 +39,7 @@ function [lambda,V,err,itr]=pqrst(A,varargin)
 switch length(varargin)
     case 0
         % default tolerance
-        tol=1e-10;
+        tol=1e-16;
         % default maximal number of iterations
         kmax=100;
         % default shift
