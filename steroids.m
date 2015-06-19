@@ -122,7 +122,7 @@ for i=1:length(r)-1           % outer loop over the levels
             polyV=vec2hpoly(Vt{whichvcounter}(:,col),d,n);
             if mod(d,2)==1
                 % odd-order, need to embed
-                 polyV{1,2}=polyV{1,2}+[ones(length(polyV{1,1}),1) zeros(length(polyA{1,1}),n-1)];
+                 polyV{1,2}=polyV{1,2}+[ones(length(polyV{1,1}),1) zeros(length(polyV{1,1}),n-1)];
                  dtemp=(d+1)/2;
             else
                 dtemp=d/2;
