@@ -152,8 +152,7 @@ for i=1:length(r)-1           % outer loop over the levels
             end            
         end
         counter=counter+1;
-        if rem(j,length(Dt{whichvcounter}))==0
-%             V{whichvcounter}=[];
+        if rem(j,n^d)==0
             whichvcounter =  whichvcounter+1;
         end
     end
