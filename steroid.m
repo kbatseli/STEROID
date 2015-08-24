@@ -149,7 +149,7 @@ for i=1:length(r)-1           % outer loop over the levels
             L{counter}=zeros(n^dtemp,1);
             Llevel=[Llevel;L{counter}];
             if i==length(r)-1                
-                vcolcounter=vcolcounter+size(V1,2);
+                vcolcounter=vcolcounter+n^dtemp;
             end            
         end
         counter=counter+1;
