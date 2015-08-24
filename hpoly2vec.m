@@ -38,7 +38,7 @@ for i=1:length(polyA{1,1})
     nzmax=nzmax+numberofentries;
        
     % collect all values
-    val=[val;polyA{1,1}(i)*ones(numberofentries,1)];
+    val=[val;polyA{1,1}(i)*ones(numberofentries,1)/numberofentries];
     colI=[colI;ones(numberofentries,1)];
     
     % compute corresponding row and column indices
