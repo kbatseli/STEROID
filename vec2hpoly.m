@@ -46,6 +46,7 @@ while ~isempty(tempindices)
            
     temp=perms(tempindices(1,:));
     temp=intersect(temp,temp,'rows');
+    polyV{1,1}(end)=polyV{1,1}(end)*size(temp,1);
     [tempindices,IA]=setdiff(tempindices,temp,'rows');
     allI=1:length(I);
     allI(IA)=[];
