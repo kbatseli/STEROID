@@ -34,7 +34,11 @@ for i=1:p
 		end
 	end
 end
-string=['lindex=sub2ind(' num2str(n) '*ones(1,' num2str(d) ')'];
+if d==1
+	string=['lindex=sub2ind([' num2str(n) '*ones(1,' num2str(d) '),1]'];
+else
+	string=['lindex=sub2ind(' num2str(n) '*ones(1,' num2str(d) ')'];
+end
 for i=1:d
 	string=[string ',index(:,' num2str(i) ')'];
 end

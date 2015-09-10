@@ -43,7 +43,11 @@ for i=1:length(polyA{1,1})
     
     % compute corresponding row and column indices
     for j=1:numberofentries
+    if d==1
+		string=['rowI=[rowI;sub2ind([n*ones(1,d),1],indices(j,1)'];
+    else
        string=['rowI=[rowI;sub2ind(n*ones(1,d),indices(j,1)'];
+    end
        for k=2:d
            string=[string ',indices(j,' num2str(k) ')' ];
        end
