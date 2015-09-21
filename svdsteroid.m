@@ -38,7 +38,7 @@ for i=1:r
     for j=1:size(V{i},2)
         W(:,j)=mkron(V{i}(:,j),d-1);
     end
-    X=[X mkron(W,U(:,i))];
+    X=[X kron(W,U(:,i))];
 end
 
 % retrieve the "eigenvalues"
