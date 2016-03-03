@@ -31,6 +31,7 @@ d=length(n);
 s1=diag(S1);
 tol=prod(n(2:end))*eps(s1);
 r=sum(s1>tol);
+U=U(:,1:r);
 X=[];
 for i=1:r
     [V{i},tails{i}]=steroid(reshape(V1(:,i),n(2:end)));
