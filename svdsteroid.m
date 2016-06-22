@@ -29,7 +29,7 @@ d=length(n);
 [U S1 V1]=svd(reshape(A,[n(1) prod(n(2:end))]),'econ');
 % now determine number of nonzero singular values
 s1=diag(S1);
-tol=prod(n(2:end))*eps(s1);
+tol=prod(n(2:end))*eps(s1(1));
 r=sum(s1>tol);
 U=U(:,1:r);
 X=[];
@@ -44,7 +44,7 @@ end
 
 % retrieve the "eigenvalues"
 d=X\A(:);
-e=norm(A(:)-X*d);
+e=norm(A(:)-X*d)/norm(A(:));
 
 
 end
